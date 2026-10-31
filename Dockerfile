@@ -9,13 +9,13 @@
 # binary requires at most GLIBC_2.39, which cloudron/base:6.0.1 (glibc 2.43) provides with room to
 # spare; every version bump must still re-run the linkage gate in UPGRADING.md.
 
-ARG AGENTGATEWAY_VERSION=v1.6.0
+ARG AGENTGATEWAY_VERSION=v1.7.0
 
 # --- Stage 1: the official upstream image, used only as a source for the binary ----------
 # Pinned by DIGEST, not by the tag alone: a tag is mutable and a reproducible build is the
 # point (field guide). The tag is kept alongside for readability; both move together.
-# Digest resolved 2026-10-16 for v1.6.0.
-FROM ghcr.io/agentgateway/agentgateway:v1.6.0@sha256:9d3e6044ddcdc0878b1787f77bd401252b95e22684203fb5e874c4c42d2ed90c AS upstream
+# Digest resolved 2026-10-31 for v1.7.0.
+FROM ghcr.io/agentgateway/agentgateway:v1.7.0@sha256:60216aafb03d37f94e952ff3d51d2f630a65b10ecaebdc0a864882f92610c45b AS upstream
 
 # --- Stage 1b: Node, for stdio MCP servers launched with npx -----------------------------
 # cloudron/base 6 ships no Node (base 5 carried it). The package brings its own, from the

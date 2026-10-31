@@ -1,3 +1,21 @@
+[1.0.5]
+
+- Upstream agentgateway 1.6.0 to 1.7.0. Model catalog with context windows and capabilities in
+  `/v1/models` and CEL, service-tier-aware cost, request log analytics, guardrails over tool output, CEL
+  filtering of MCP traffic, automatic agent session tracking, OIDC for browsers and API clients, and a
+  raw YAML mode in every admin UI editor.
+- Behaviour changes from the upstream notes: standalone now always encrypts MCP sessions (it generates a
+  `config.session.key` in the config file when unset, so MCP sessions open across the upgrade are
+  rejected and clients start new ones; set `config.session.key: disabled` to keep them unencrypted);
+  prompt guards now inspect tool output by default (set `scope` to `SystemPrompt` and `Messages` for the
+  old behaviour); dynamic backends cannot reach loopback or link-local addresses unless
+  `config.backend.allowDynamicLoopback: true`; error responses no longer carry internal details such as
+  addresses and CEL expressions (they are still logged); CEL header lookups return a list for repeated
+  headers; `AGENTGATEWAY_MESSAGES_PREFER_COMPLETIONS` is removed; `llm.serviceTier` is normalised to
+  `standard`, `flex`, `priority` or `reserved`.
+- On first start the request log database gains new analytics columns, backfilled from existing rows,
+  which can take a while on a large database.
+
 [1.0.4]
 
 - Base image cloudron/base 6.0.0 to 6.0.1: Ubuntu security updates, including the removal of the

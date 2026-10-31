@@ -90,12 +90,12 @@ Current pins (confirm at build time, see below):
 
 | Component                | Pin                          | Notes |
 |--------------------------|------------------------------|-------|
-| agentgateway (upstream)  | `v1.6.0`                     | Current stable, released 2026-10-02. Verified to run on the base, see below. |
-| agentgateway image       | `ghcr.io/agentgateway/agentgateway:v1.6.0` | Mirror: `cr.agentgateway.dev/agentgateway:v1.6.0`. Roughly 88 MB, single binary at `/app/agentgateway`, UI embedded, default user 65532. |
+| agentgateway (upstream)  | `v1.7.0`                     | Current stable, released 2026-10-27. Verified to run on the base, see below. |
+| agentgateway image       | `ghcr.io/agentgateway/agentgateway:v1.7.0` | Mirror: `cr.agentgateway.dev/agentgateway:v1.7.0`. Roughly 88 MB, single binary at `/app/agentgateway`, UI embedded, default user 65532. |
 | Cloudron base image      | `cloudron/base:6.0.1`        | Ubuntu 26.04, glibc 2.43. Bundles gosu, curl, tini, ca-certificates; no Node, so the package copies in Node 24.22.1 with npm and npx. |
 | Cloudron box (target)    | `9.1.x`                      | Our box is on the 9.1 line. |
 
-The agentgateway v1.6.0 binary requires a maximum symbol version of `GLIBC_2.39`, which the base
+The agentgateway v1.7.0 binary requires a maximum symbol version of `GLIBC_2.39`, which the base
 (`cloudron/base:6.0.1`, glibc 2.43) provides with room to spare. Every version bump
 must re-run the linkage check (`ldd` plus `agentgateway -V` on the base image) before shipping. See
 UPGRADING.md.
@@ -105,7 +105,7 @@ UPGRADING.md.
 - Latest agentgateway tag: <https://github.com/agentgateway/agentgateway/releases>
 - Latest Cloudron base image: <https://docs.cloudron.io/packaging/> (cheat sheet)
 
-If a newer tag than v1.6.0 is available, do not silently jump to it. Follow the
+If a newer tag than v1.7.0 is available, do not silently jump to it. Follow the
 controlled procedure in UPGRADING.md.
 
 **Why agentgateway is low-risk to upgrade:** the only persistent state is the YAML config

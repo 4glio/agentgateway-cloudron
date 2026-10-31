@@ -27,10 +27,10 @@ release gates below exist to catch the two ways a bump can break.
 
 ## Current pin
 
-- Upstream: `v1.6.0` (stable, released 2026-10-02).
-- Image: `ghcr.io/agentgateway/agentgateway:v1.6.0` (mirror `cr.agentgateway.dev/agentgateway:v1.6.0`).
+- Upstream: `v1.7.0` (stable, released 2026-10-27).
+- Image: `ghcr.io/agentgateway/agentgateway:v1.7.0` (mirror `cr.agentgateway.dev/agentgateway:v1.7.0`).
 - Image digest at packaging time:
-  `sha256:9d3e6044ddcdc0878b1787f77bd401252b95e22684203fb5e874c4c42d2ed90c`.
+  `sha256:60216aafb03d37f94e952ff3d51d2f630a65b10ecaebdc0a864882f92610c45b`.
 
 This is the first stable of the v1.3 line, which carries the rebuilt UI, AI cost analysis,
 virtual models, reusable providers, and guardrails. The binary lives at `/app/agentgateway`

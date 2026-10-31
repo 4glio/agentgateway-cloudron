@@ -6,8 +6,8 @@
   "icon": "file://logo.png",
   "description": "file://DESCRIPTION.md",
   "changelog": "file://CHANGELOG.md",
-  "version": "1.0.4",
-  "upstreamVersion": "1.6.0",
+  "version": "1.0.5",
+  "upstreamVersion": "1.7.0",
   "healthCheckPath": "/ui/",
   "httpPort": 15000,
   "httpPorts": {
@@ -39,5 +39,5 @@
   "mediaLinks": [
     "https://raw.githubusercontent.com/OrcVole/agentgateway-cloudron/main/screenshots/admin-overview.png"
   ],
-  "dockerImage": "ghcr.io/orcvole/agentgateway-cloudron@sha256:68c17c6fc9522b3d17e94014faca76b678a1d8580a6620767d9984782034ab48"
+  "dockerImage": "ghcr.io/orcvole/agentgateway-cloudron@sha256:eb0adadcaba17aab003133fe60cdd10b2421efa61a0c499fa485f5c7a2ac9590"
 }
