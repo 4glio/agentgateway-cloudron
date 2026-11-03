@@ -1,0 +1,17 @@
+# Findings trivy-scan.sh may ignore, one ID per line, each with its reason beside it.
+#
+# Same doctrine as .scan-allowlist: every line is a REVIEWABLE CLAIM that the finding does not
+# apply to this package, never a way to quieten a real one. Empty is the normal state and a
+# non-empty file should be explained in the pull request that adds to it.
+#
+# Before adding a line, try the fix: a base-image bump, or a bump of the pinned tool. An exception
+# without an attempt at a fix is a decision the next maintainer inherits without the context.
+#
+# Format: <ID>  [# reason, and what would make this line go away]
+
+# DS-0002 (Dockerfile has no USER). Deliberate and required by the platform: Cloudron starts the
+# container as root so it can chown /app/data (a bind mount whose ownership is not ours), and
+# start.sh drops to the cloudron user with gosu before exec'ing agentgateway (start.sh:95). A USER
+# line here would break the chown and the app would not start. This line goes away only if Cloudron
+# changes that convention.
+DS-0002
