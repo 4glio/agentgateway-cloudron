@@ -5,7 +5,7 @@
 # copied into every package, so the only defence against the drift that produced twelve different
 # secret gates is a version stamp CI can compare. Bump it when this file changes; never edit a
 # package's copy in place.
-SCAN_VERSION=2026-11-03.1
+SCAN_VERSION=2026-11-03.2
 #
 # WHY THIS EXISTS ALONGSIDE secret-scan.sh
 # secret-scan answers "does this artefact leak something of ours". Nothing answered "does this
@@ -47,6 +47,10 @@ SCAN_VERSION=2026-11-03.1
 #   scan is skipped and only the config scan runs.
 #   TRIVY_MIN_VERSION   minimum acceptable trivy (default 0.58.0)
 #   TRIVY_REPORT_DIR    write JSON and SARIF evidence there (off by default: they are large)
+#   SCAN_SBOM=<path>    also write a CycloneDX software bill of materials for the image. This is
+#                       the artefact an assessor asks for and the thing that answers "which
+#                       packages were in the build that shipped", so CI produces it every run
+#                       rather than reconstructing it months later from an image nobody kept.
 #   TRIVY_SEVERITY      override the failing severities (default HIGH,CRITICAL)
 #   TRIVY_REPORT_ONLY=1 print, do not enforce
 #
@@ -128,6 +132,16 @@ else
   if [ -n "$REPORT_DIR" ]; then
     report "$TRIVY" image --quiet --format json --output "$REPORT_DIR/trivy-image.json" "$IMAGE"
     report "$TRIVY" image --quiet --format sarif --output "$REPORT_DIR/trivy-image.sarif" "$IMAGE"
+  fi
+  # The SBOM is generated from the same image the gate inspects, in the same run, so the two can
+  # never disagree about what was scanned. Not fatal: an SBOM that costs a build failure is worse
+  # than none, but the omission is said out loud.
+  if [ -n "${SCAN_SBOM:-}" ]; then
+    if "$TRIVY" image --quiet --format cyclonedx --output "$SCAN_SBOM" "$IMAGE" >/dev/null 2>&1; then
+      note "sbom: $SCAN_SBOM ($(wc -c <"$SCAN_SBOM" 2>/dev/null || echo 0) bytes, cyclonedx)"
+    else
+      note "sbom NOT written: trivy could not emit cyclonedx for $IMAGE"
+    fi
   fi
   image_args=(image --quiet --severity "$SEVERITY" --ignore-unfixed --exit-code 1
               --scanners vuln "${IGNORE_ARGS[@]}" "$IMAGE")

@@ -46,6 +46,12 @@ on:
   pull_request:
     branches: [main]
 
+# Least privilege, stated rather than inherited: the default token scope is a repository setting
+# somebody else controls, and a read-write default silently grants the gates the right to push.
+# Nothing in this workflow writes to the repository.
+permissions:
+  contents: read
+
 env:
   # The tag the gates build and inspect. Kept in one place: both scripts take an image argument and
   # they must be handed the SAME one, or secret-scan proves a different artefact than smoke tested.
@@ -57,7 +63,7 @@ jobs:
     # and reports nothing, which looks like a guarded PR and is not one.
     runs-on: workstation
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683  # v4.2.2
 
       # podman, not docker: there is no docker daemon here. The gate scripts already default to
       # podman (they document ENGINE=docker as the override), so this matches them rather than
