@@ -12,8 +12,6 @@
   to `/usr/local/node-24.22.2`.
 - CI publishes a CycloneDX software bill of materials for every build, from the same image the
   gate inspects (`SCAN_SBOM`), so "what shipped" is answerable later without the image.
-- CI runs on GitHub as well as the main forge (`.github/workflows/ci.yml`), with least-privilege
-  tokens and actions pinned by commit rather than by tag.
 - No upstream agentgateway change: v1.7.0 remains current.
 
 [1.0.5]

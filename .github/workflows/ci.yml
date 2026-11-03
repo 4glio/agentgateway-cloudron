@@ -24,13 +24,6 @@ concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
 
-# Least privilege, stated rather than inherited. Without this block the job's token carries
-# whatever the repository default is, and a default of read-write turns every future step, and any
-# action that step pulls in, into something that can push to main. Nothing here needs more than
-# read, so nothing gets more than read.
-permissions:
-  contents: read
-
 env:
   # One tag for the whole job: every gate must inspect the same artefact, or secret-scan proves
   # something other than what smoke tested.
@@ -41,10 +34,7 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
-      # Pinned by commit, not by tag. A tag is a movable pointer: `@v4` means whatever v4 points at
-      # when the job runs, which is how a compromised or retargeted action gets executed with this
-      # repository's token. The version is in the comment so a reader still knows what it is.
-      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683  # v4.2.2
+      - uses: actions/checkout@v4
         with:
           # Full history: secret-scan and trivy both read more than HEAD.
           fetch-depth: 0

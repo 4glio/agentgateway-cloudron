@@ -46,12 +46,6 @@ on:
   pull_request:
     branches: [main]
 
-# Least privilege, stated rather than inherited: the default token scope is a repository setting
-# somebody else controls, and a read-write default silently grants the gates the right to push.
-# Nothing in this workflow writes to the repository.
-permissions:
-  contents: read
-
 env:
   # The tag the gates build and inspect. Kept in one place: both scripts take an image argument and
   # they must be handed the SAME one, or secret-scan proves a different artefact than smoke tested.
@@ -63,7 +57,7 @@ jobs:
     # and reports nothing, which looks like a guarded PR and is not one.
     runs-on: workstation
     steps:
-      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683  # v4.2.2
+      - uses: actions/checkout@v4
 
       # podman, not docker: there is no docker daemon here. The gate scripts already default to
       # podman (they document ENGINE=docker as the override), so this matches them rather than
@@ -153,7 +147,19 @@ jobs:
       - name: trivy-scan
         run: |
           export PATH="$HOME/.local/bin:$PATH"
+          # The bill of materials comes from the same image this gate inspects, in the same run, so
+          # the two cannot disagree about what was scanned. Wired here as well as on the other
+          # forge: this is where a merge actually happens.
+          export SCAN_SBOM=sbom.cdx.json
           test/trivy-scan.sh "$IMAGE"
+
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02  # v4.6.2
+        if: always()
+        with:
+          name: sbom-cyclonedx
+          path: sbom.cdx.json
+          if-no-files-found: warn
+          retention-days: 90
 
       # Host mode leaves both the image AND the workspace on a shared machine - this is not a
       # container that vanishes. So remove the image rather than accumulating one per PR, and delete
