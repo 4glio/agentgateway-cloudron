@@ -336,6 +336,54 @@
             "creationDate": "Mon, 09 Nov 2026 14:13:09 GMT",
             "ts": 1794233589567,
             "publishState": "published"
+        },
+        "1.0.7": {
+            "manifest": {
+                "id": "dev.agentgateway.cloudronapp",
+                "title": "Agentgateway",
+                "author": "4GL",
+                "tagline": "Open source proxy for MCP and LLM traffic",
+                "icon": "file://logo.png",
+                "description": "<upstream>1.7.0</upstream>\n\nagentgateway is an open source proxy for AI traffic. It sits in front of your model providers\nand tool servers and gives agents a single, governed entry point.\n\nThis package runs agentgateway on Cloudron with a clean, secure topology:\n\n- The admin interface and UI run on the app's primary domain, behind Cloudron login, so only\n  your Cloudron users can configure the gateway.\n- The data plane (the Model Context Protocol endpoint and the OpenAI-compatible LLM endpoint)\n  runs on a separate subdomain that programmatic clients reach directly, protected by an API\n  key that is generated for you on first install.\n\nUse it to:\n\n- Expose MCP tool servers (stdio, SSE, streamable HTTP, or remote) to your agents through one\n  endpoint, with authentication and access policies.\n- Put an OpenAI-compatible front door in front of one or more LLM providers, with key\n  management, failover, and cost visibility.\n\nagentgateway is an Apache-2.0 licensed Linux Foundation project. This package tracks its stable\nreleases and keeps the upstream binary unmodified.\n\nIssues and questions about this package go to its public issue tracker.\n",
+                "changelog": "- Move the documented maintainer to 4GL. `author` and `contactEmail` in the manifest, and therefore in\n  every new feed entry, now name 4GL and ciso@4gl.io; `packagerUrl` points at 4gl.io rather than the\n  product site. Nothing changes at runtime: same app id, same image, same data. The change matters at\n  the one moment a Cloudron operator needs to know who to contact about the package. Entries 1.0.0 to\n  1.0.6 keep OrcVole in their embedded manifest copies, because a published entry records what a box\n  installed and is not rewritten; `.scan-allowlist` keeps that address for that reason and only that\n  reason.\n",
+                "version": "1.0.7",
+                "upstreamVersion": "1.7.0",
+                "healthCheckPath": "/ui/",
+                "httpPort": 15000,
+                "httpPorts": {
+                    "DATA_PLANE_DOMAIN": {
+                        "title": "Data plane (MCP and LLM API)",
+                        "description": "Programmatic endpoint for MCP and LLM clients. This domain is not behind Cloudron login; it is secured by the agentgateway API key.",
+                        "containerPort": 3000,
+                        "defaultValue": "gw-api"
+                    }
+                },
+                "addons": {
+                    "localstorage": {},
+                    "proxyAuth": {}
+                },
+                "memoryLimit": 1073741824,
+                "configurePath": "/ui/",
+                "tags": [
+                    "chat"
+                ],
+                "website": "https://github.com/4glio/agentgateway-cloudron",
+                "documentationUrl": "https://github.com/4glio/agentgateway-cloudron",
+                "postInstallMessage": "# agentgateway is installed\n\n## Admin UI\n\nOpen $CLOUDRON-APP-ORIGIN and sign in with your Cloudron account. The admin UI is on the primary\ndomain and is protected by Cloudron login, so only your Cloudron users can reach it.\n\n## Data plane (MCP and LLM)\n\nThe programmatic endpoint is on the separate domain you assigned to the \"Data plane\" port during\ninstall (the suggested name was `gw-api`). You can see or change it under this app's Location\nsettings. It is intentionally not behind Cloudron login, because automated agents and LLM clients\ncannot complete an interactive sign-in. It is protected by an API key instead.\n\nA demo MCP server (the reference \"everything\" server) is already wired up at `/mcp`, so you can\ntest right away.\n\n## Your API key\n\nA data-plane API key was generated on first start. The simplest way to see it is in the admin UI\n(above): open the data-plane listener and look at its API key policy. The same value is also\nwritten to the app's storage, so from a terminal you can run `cloudron exec` for this app and\n`cat /app/data/.api_key` (it is also present in `/app/data/config.yaml`).\n\nClients send it as a bearer token, for example:\n\n    curl https://<your-data-plane-domain>/mcp -H \"Authorization: Bearer <the-key>\"\n\n## Next steps\n\n- Add LLM and MCP backends in the admin UI, or by editing `/app/data/config.yaml`.\n- To enable the OpenAI-compatible `/v1` endpoint, set the provider key in this app's Environment,\n  then add the route (see the README and the `config/examples/` files).\n- Rotate or add API keys in the admin UI.\n\nUntil you configure an LLM, the admin panel shows \"LLM config is not initialized\". That is expected\nand harmless: the gateway is healthy and MCP works. The OpenAI-compatible `/v1` endpoint is a\ndata-plane route you add separately (see `config/examples/ollama.yaml`); it works on its own,\nindependent of that panel message.\n\nThe README covers the full topology, the exact client URLs, and the security model. Report issues at the project's public issue tracker.\n",
+                "manifestVersion": 2,
+                "contactEmail": "ciso@4gl.io",
+                "iconUrl": "https://raw.githubusercontent.com/4glio/agentgateway-cloudron/main/logo.png",
+                "packagerName": "4GL",
+                "packagerUrl": "https://4gl.io",
+                "minBoxVersion": "9.1.0",
+                "mediaLinks": [
+                    "https://raw.githubusercontent.com/4glio/agentgateway-cloudron/main/screenshots/admin-overview.png"
+                ],
+                "dockerImage": "ghcr.io/4glio/agentgateway-cloudron@sha256:6c26f664b1e6bfa3e32210361256bae744e458dc07261110b3128b561190975e"
+            },
+            "creationDate": "Mon, 09 Nov 2026 14:47:14 GMT",
+            "ts": 1794235634766,
+            "publishState": "published"
         }
     }
 }

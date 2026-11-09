@@ -6,7 +6,7 @@
   "icon": "file://logo.png",
   "description": "file://DESCRIPTION.md",
   "changelog": "file://CHANGELOG.md",
-  "version": "1.0.6",
+  "version": "1.0.7",
   "upstreamVersion": "1.7.0",
   "healthCheckPath": "/ui/",
   "httpPort": 15000,
@@ -39,5 +39,5 @@
   "mediaLinks": [
     "https://raw.githubusercontent.com/4glio/agentgateway-cloudron/main/screenshots/admin-overview.png"
   ],
-  "dockerImage": "ghcr.io/4glio/agentgateway-cloudron@sha256:895c796335ead1214744b7f681e9f5e91877ac17bd013e67f6fef6f48c31fab2"
+  "dockerImage": "ghcr.io/4glio/agentgateway-cloudron@sha256:6c26f664b1e6bfa3e32210361256bae744e458dc07261110b3128b561190975e"
 }

@@ -1,4 +1,4 @@
-[Unreleased]
+[1.0.7]
 
 - Move the documented maintainer to 4GL. `author` and `contactEmail` in the manifest, and therefore in
   every new feed entry, now name 4GL and ciso@4gl.io; `packagerUrl` points at 4gl.io rather than the
