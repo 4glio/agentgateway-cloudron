@@ -8,6 +8,11 @@
 # without an attempt at a fix is a decision the next maintainer inherits without the context.
 #
 # Format: <ID>  [# reason, and what would make this line go away]
+#
+# WHOLE-CLASS exclusions do not belong here. They live in .trivy-ignore.rego, which states once why
+# a class of finding cannot apply to this artefact (kernel advisories attributed to
+# linux-libc-dev in a container that ships no kernel) instead of accumulating IDs every time the
+# vulnerability database moves.
 
 # DS-0002 (Dockerfile has no USER). Deliberate and required by the platform: Cloudron starts the
 # container as root so it can chown /app/data (a bind mount whose ownership is not ours), and
@@ -22,7 +27,8 @@ DS-0002
 # These are compiled into the agentgateway release binary. This repository does not patch or
 # rebuild upstream (AGENTS.md, section 2), so the fix does not exist here: it arrives with the
 # next upstream release that rebuilds against a patched toolchain. Verified against the published
-# image for 1.0.5; the first run of this gate is what surfaced them.
+# image for 1.0.5 and again against the 1.0.6 build; the first run of this gate is what surfaced
+# them.
 #
 # Removal condition: the next AGENTGATEWAY_VERSION bump, after re-running this gate. If a bump
 # does not clear a line here, that is a question for upstream rather than a reason to keep the
@@ -70,9 +76,31 @@ CVE-2026-97031
 # Removal condition: the next cloudron/base bump.
 CVE-2026-111497
 
+# apt and libapt-pkg7.0, CVE-2026-109518 (remote code execution through hard link reuse during
+# package download). The fix is in 3.2.1ubuntu0.1, which cloudron/base 6.0.1 does not carry; the
+# base is built by Cloudron, not rebuilt here, and adding an apt upgrade to the Dockerfile would
+# put the image on a package set no base tag describes.
+#
+# Exposure: the package manager runs at build time and inside `cloudron exec`, not on the
+# request path. Worth fixing, not worth holding a release for.
+#
+# Removal condition: the next cloudron/base bump after the fix lands upstream.
+CVE-2026-109518
+
 # ---------------------------------------------------------------------------- #
-# Deliberately NOT excepted: the npm dependencies (brace-expansion, undici) found in the same
-# scan. They ship inside npm's own node_modules, so a Node bump is the fix, and this change
-# carries one (24.22.1 to 24.22.2). If the first CI run still reports them, the answer is an npm
-# bump or an upstream Node release, not a line here.
-# npm findings seen on 1.0.5: CVE-2026-102276, CVE-2026-102278, CVE-2026-109383, CVE-2026-109869, CVE-2026-19534, CVE-2026-87018
+# npm, inside the Node runtime this package bundles (24.22.2).
+#
+# brace-expansion and undici ship in npm's own node_modules. The 1.0.6 release carried a Node
+# bump (24.22.1 to 24.22.2) expecting it to clear them; it did not, and 24.22.2 is the newest
+# release on the 24 line, so there is no bump to take. npm's dependencies are not ours to pin:
+# repacking npm inside the image would diverge from the upstream Node artefact the Dockerfile
+# consumes.
+#
+# Removal condition: the next Node 24.x release. Re-run the gate on the bump; if these persist,
+# it is an upstream question, not a reason to keep the exception.
+CVE-2026-102276
+CVE-2026-102278
+CVE-2026-109383
+CVE-2026-109869
+CVE-2026-19534
+CVE-2026-87018

@@ -35,8 +35,8 @@ FROM docker.io/cloudron/base:6.0.1@sha256:7b1e729960c3ca312d26e886917ba89483241b
 #           config file, and the genuine admin default binds localhost only).
 ARG UV_VERSION=0.13.7
 ARG UV_SHA256=c5221ff41b7892bfc223543883600125f6a47fe845093e0f5bdff4f359196d83
-ARG YQ_VERSION=v4.54.1
-ARG YQ_SHA256=8e34fc298390875de416e6a4afcb8cabeceb25d9aa8506c1a2f9353cf702ea5f
+ARG YQ_VERSION=v4.54.3
+ARG YQ_SHA256=129534601871538efe0ba4c5e62a34fb1d5f469bcb975c4fddeb467d82974973
 
 RUN set -eux; \
     # uv + uvx
@@ -45,10 +45,15 @@ RUN set -eux; \
     tar -xzf /tmp/uv.tar.gz -C /tmp; \
     install -m 0755 /tmp/uv-x86_64-unknown-linux-gnu/uv  /usr/local/bin/uv; \
     install -m 0755 /tmp/uv-x86_64-unknown-linux-gnu/uvx /usr/local/bin/uvx; \
-    # yq
+    # yq. The base ships its own copy at /usr/bin/yq (v4.53.6 as of base 6.0.1), unmanaged by dpkg.
+    # /usr/local/bin shadows it on PATH, so it is never executed, but it is still a binary in the
+    # published image carrying its own Go dependency tree: trivy reported a fixable HIGH against it
+    # that no bump of our pin could clear. One yq in the image, the pinned one.
     curl -fsSL -o /usr/local/bin/yq "https://github.com/mikefarah/yq/releases/download/${YQ_VERSION}/yq_linux_amd64"; \
     echo "${YQ_SHA256}  /usr/local/bin/yq" | sha256sum -c -; \
     chmod 0755 /usr/local/bin/yq; \
+    rm -f /usr/bin/yq; \
+    test "$(command -v yq)" = "/usr/local/bin/yq"; \
     rm -rf /tmp/uv.tar.gz /tmp/uv-x86_64-unknown-linux-gnu; \
     # sanity: every runtime tool must resolve in the final image
     uv --version; uvx --version; yq --version; gosu --version

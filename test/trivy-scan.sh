@@ -5,7 +5,7 @@
 # copied into every package, so the only defence against the drift that produced twelve different
 # secret gates is a version stamp CI can compare. Bump it when this file changes; never edit a
 # package's copy in place.
-SCAN_VERSION=2026-11-03.2
+SCAN_VERSION=2026-11-09.1
 #
 # WHY THIS EXISTS ALONGSIDE secret-scan.sh
 # secret-scan answers "does this artefact leak something of ours". Nothing answered "does this
@@ -108,6 +108,19 @@ if [ -s .trivyignore ]; then
   IGNORE_ARGS=(--ignorefile .trivyignore)
 fi
 
+# A class policy, separate from the per-finding allowlist, and opt-in by file
+# presence so this script still works unchanged in a package that has none.
+# The difference matters: .trivyignore lists individual advisories, each with a
+# removal condition, and it grows every time the database moves. A policy states
+# once why a whole class cannot apply to this artefact (the canonical example:
+# kernel advisories attributed to linux-libc-dev, in a container that ships no
+# kernel) and does not need editing when a new CVE joins that class.
+POLICY_ARGS=()
+if [ -f .trivy-ignore.rego ]; then
+  say "policy: .trivy-ignore.rego (class exclusions, evaluated per vulnerability)"
+  POLICY_ARGS=(--ignore-policy .trivy-ignore.rego)
+fi
+
 report() {  # <format> <path>
   [ -n "$REPORT_DIR" ] || return 0
   mkdir -p "$REPORT_DIR"
@@ -144,7 +157,7 @@ else
     fi
   fi
   image_args=(image --quiet --severity "$SEVERITY" --ignore-unfixed --exit-code 1
-              --scanners vuln "${IGNORE_ARGS[@]}" "$IMAGE")
+              --scanners vuln "${IGNORE_ARGS[@]}" "${POLICY_ARGS[@]}" "$IMAGE")
   # Trivy's exit code cannot separate "found something" from "could not run" once --exit-code is
   # set: a FATAL from a missing DB or an unreachable registry also arrives as 1. So the text is
   # read as well, and "the gate did not run" is reported as its own failure rather than as a
@@ -171,7 +184,7 @@ fi
 # --- 2. the repo config --------------------------------------------------------- #
 say ""
 say "-- config: Dockerfile and friends"
-cfg_out="$("$TRIVY" config --quiet --severity "$SEVERITY" --exit-code 1 "${IGNORE_ARGS[@]}" . 2>&1)"; cfg_rc=$?
+cfg_out="$("$TRIVY" config --quiet --severity "$SEVERITY" --exit-code 1 "${IGNORE_ARGS[@]}" "${POLICY_ARGS[@]}" . 2>&1)"; cfg_rc=$?
 printf '%s\n' "$cfg_out"
 if printf '%s' "$cfg_out" | grep -qE 'FATAL|scan error|unable to (initialize|download|open|cache)'; then
   fail "the config scan could not run (trivy exit $cfg_rc) - this is NOT a clean result"
