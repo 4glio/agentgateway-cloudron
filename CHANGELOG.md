@@ -1,4 +1,4 @@
-[Unreleased]
+[1.0.6]
 
 - Publish this package's own image, `ghcr.io/4glio/agentgateway-cloudron`, and release it from CI.
   `scripts/release.sh` replaces the twelve-step manual runbook: it builds, runs the linkage, secret,
