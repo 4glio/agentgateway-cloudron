@@ -92,7 +92,7 @@ Current pins (confirm at build time, see below):
 |--------------------------|------------------------------|-------|
 | agentgateway (upstream)  | `v1.7.0`                     | Current stable, released 2026-10-27. Verified to run on the base, see below. |
 | agentgateway image       | `ghcr.io/agentgateway/agentgateway:v1.7.0` | Mirror: `cr.agentgateway.dev/agentgateway:v1.7.0`. Roughly 88 MB, single binary at `/app/agentgateway`, UI embedded, default user 65532. |
-| Cloudron base image      | `cloudron/base:6.0.1`        | Ubuntu 26.04, glibc 2.43. Bundles gosu, curl, tini, ca-certificates; no Node, so the package copies in Node 24.22.1 with npm and npx. |
+| Cloudron base image      | `cloudron/base:6.0.1`        | Ubuntu 26.04, glibc 2.43. Bundles gosu, curl, tini, ca-certificates; no Node, so the package copies in Node 24.22.2 with npm and npx. |
 | Cloudron box (target)    | `9.1.x`                      | Our box is on the 9.1 line. |
 
 The agentgateway v1.7.0 binary requires a maximum symbol version of `GLIBC_2.39`, which the base
@@ -227,8 +227,13 @@ These are the only supported workflows. Keep them working; if you change them, u
 section.
 
 ```bash
-# Build and push to your registry (run from the repo root, on a machine with Docker)
-cloudron build
+# Release: build, run every gate, publish the image, write the manifest and the feed.
+# CI runs the same script (.github/workflows/release.yml); see docs/RELEASING.md.
+scripts/release.sh 1.0.6
+
+# Local iteration only: build without publishing or gating
+podman build -t agentgateway-dev .        # or: docker build -t agentgateway-dev .
+PUSH=0 SKIP_GATES=1 scripts/release.sh 1.0.6   # dry run, writes nothing
 
 # Install on the target Cloudron (use --debug for a writable rootfs while iterating)
 cloudron install --location agentgateway.example.com

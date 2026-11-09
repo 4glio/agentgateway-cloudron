@@ -16,12 +16,12 @@
 # and the admin UI can rewrite config.yaml), that the data plane rejects an unkeyed request rather
 # than serving it, and that the generated key is well-formed and does not leak into the logs.
 #
-# Usage:  test/smoke.sh [image]     (default: ghcr.io/orcvole/agentgateway-cloudron:dev)
+# Usage:  test/smoke.sh [image]     (default: ghcr.io/4glio/agentgateway-cloudron:dev)
 #         ENGINE=docker test/smoke.sh   to use docker instead of podman
 set -uo pipefail
 cd "$(dirname "$0")/.." || exit 2
 
-IMAGE="${1:-ghcr.io/orcvole/agentgateway-cloudron:dev}"
+IMAGE="${1:-ghcr.io/4glio/agentgateway-cloudron:dev}"
 ENGINE="${ENGINE:-$(command -v podman >/dev/null && echo podman || echo docker)}"
 NAME="agw-smoke-$$"
 VOL="agw-smoke-vol-$$"
@@ -74,7 +74,18 @@ bind=$("$ENGINE" exec "$NAME" yq -r '.config.adminAddr // "unset"' /app/data/con
 #    Corroborate from the running process: the bind is what the listener actually established.
 #    -a and -F: the log stream can carry bytes grep treats as binary, and a fixed string avoids
 #    the whitespace between the tab-separated fields mattering.
-"$ENGINE" logs "$NAME" 2>&1 | grep -aqF 'address=0.0.0.0:15000' \
+#    Polled, not read once: the UI answering 200 proves the listener exists, but the log stream
+#    is asynchronous and lags the socket by a few milliseconds. A single read here is a flake
+#    that reports a topology regression that did not happen.
+bound=0
+for _ in $(seq 1 10); do
+  if "$ENGINE" logs "$NAME" 2>&1 | grep -aqF 'address=0.0.0.0:15000'; then
+    bound=1
+    break
+  fi
+  sleep 1
+done
+[ "$bound" = 1 ] \
   && ok "admin listener established on 0.0.0.0:15000" \
   || bad "no admin listener on 0.0.0.0:15000 in the logs"
 

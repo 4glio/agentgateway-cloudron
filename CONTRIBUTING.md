@@ -11,8 +11,9 @@ rules that this file assumes.
 
 ## Development workflow
 
-1. **Prerequisites:** Docker on your machine, a Docker registry you can push to, the
-   Cloudron CLI (`npm install -g cloudron`), and access to the target Cloudron.
+1. **Prerequisites:** Docker (or rootless `podman`) and `skopeo` on your machine, and the Cloudron
+   CLI (`npm install -g cloudron`) plus access to the target Cloudron for an end-to-end install
+   check. You do not need registry credentials: releases are cut in CI.
 2. **Install the Cloudron packaging skills** if you use an AI editor, so the assistant has
    the current conformance rules:
 
@@ -31,6 +32,20 @@ rules that this file assumes.
    Use `--debug` while iterating (see DEBUGGING.md).
 4. **Test:** run the smoke-test ladder in DEBUGGING.md ("Verifying a deploy"). A change is
    not done until it passes.
+
+   Two gates run on every pull request and are worth running before you push, because both need
+   the image built and both fail for reasons that are easier to read locally:
+
+   ```bash
+   test/secret-scan.sh "$IMAGE"   # does this artefact leak something of ours
+   test/trivy-scan.sh "$IMAGE"    # does this artefact ship something known to be broken
+   python3 test/version_consistency.py  # do the manifest, feed, Dockerfile and changelog agree
+   ```
+
+   `trivy-scan.sh` also scans the build manifests. It fails on HIGH and CRITICAL findings, prints
+   the ones with no fix available without enforcing them, and treats a scan that cannot complete
+   as a failure rather than a pass. Exceptions go in `.trivyignore`, one line each, with the reason
+   and what would remove it. See `docs/decisions/0005-vulnerability-gate.md`.
 5. **Document:** update the docs your change touches. Code and docs ship together.
 6. **Commit:** one concern per commit, with a message that states the symptom fixed or the
    behaviour added.
@@ -62,14 +77,16 @@ rules that this file assumes.
 
 ## Publishing as a community app
 
-The community-app channel makes the package installable by others before any official
-review:
+Releases are cut by `scripts/release.sh`, run from `.github/workflows/release.yml`; see
+`docs/RELEASING.md` for the flow, the gates, and the one-time repository setup. Do not hand-edit
+`CloudronVersions.json` or the `dockerImage` field: both are written from the digest the registry
+returned, and a hand-edit is how the feed and the manifest drift apart.
 
 1. Keep `CloudronManifest.json` metadata complete: id, title, author, description, tagline,
    website, contactEmail, icon, tags.
-2. Maintain `CloudronVersions.json` as the version channel.
-3. Publish per the `cloudron-app-publishing` skill and the docs at
-   <https://docs.cloudron.io/packaging/> .
+2. Treat `CloudronVersions.json` as generated state. The newest entry and the manifest must name the
+   same version and the same digest; `test/version_consistency.py` enforces it.
+3. Publish per the docs at <https://docs.cloudron.io/packaging/>.
 4. Announce in the Cloudron forum so others can test, and link the public repository.
 
 ---

@@ -1,0 +1,136 @@
+name: Release
+
+# Publish a version of this package to GHCR and write it into the Cloudron feed.
+#
+# Why this exists: the package used to be released by hand from a workstation
+# with a personal access token (docs/RELEASING.md), twelve steps in which the
+# image push, the digest, the manifest pin and the feed entry were separate
+# actions. The failure mode is documented and was hit twice: the changelog moves
+# and the manifest and feed do not, and the repo advertises a version that no
+# image implements. Here the digest is read from the registry in the same run
+# that pushed the image, and the manifest and the feed are written from it, so
+# they cannot disagree.
+#
+# Trigger is manual, with the version as the only input, because a release is a
+# decision and not a side effect of merging. The branch or tag it runs on must
+# already carry the changelog notes for that version, or the run stops before it
+# builds anything.
+#
+# Authentication is the workflow's own GITHUB_TOKEN: no personal registry token
+# exists to leak, rotate, or forget to revoke. That requires
+# "Settings, Actions, General, Workflow permissions" to allow read and write,
+# and permission for the workflow to create packages under this org (the first
+# run creates the package; it is private until the visibility flip described in
+# docs/RELEASING.md).
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Package version to release, x.y.z (must have changelog notes and not be in the feed)"
+        required: true
+        type: string
+
+concurrency:
+  group: release-${{ inputs.version }}
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+  packages: write
+
+env:
+  IMAGE_REPO: ghcr.io/4glio/agentgateway-cloudron
+
+jobs:
+  release:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    env:
+      ENGINE: docker
+      PUSH: "1"
+      COMMIT: "1"
+      VERSION: ${{ inputs.version }}
+      GIT_AUTHOR_NAME: agentgateway-cloudron release
+      GIT_AUTHOR_EMAIL: release@4glio.io
+      GIT_COMMITTER_NAME: agentgateway-cloudron release
+      GIT_COMMITTER_EMAIL: release@4glio.io
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          # The release commits back to the branch it was dispatched from, so it
+          # needs the full ref, not a detached sha.
+          ref: ${{ github.ref }}
+          fetch-depth: 0
+          # The default token cannot push a commit that touches workflows. The
+          # release commit touches only the manifest, the feed and the
+          # changelog, so the default token is enough here.
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: reject a version that is not a new release
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json, sys
+          v = __import__("os").environ["VERSION"]
+          feed = json.load(open("CloudronVersions.json"))["versions"]
+          if v in feed:
+              sys.exit("FAIL: %s is already published; bump the version" % v)
+          print("%s is not yet published" % v)
+          PY
+
+      - name: install skopeo (reads the registry digest, never a local one)
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq skopeo
+
+      - name: install the pinned trivy
+        run: |
+          set -euo pipefail
+          TRIVY_VERSION=0.76.1
+          TRIVY_SHA256=c7cbe3137fb8a48a17574bede3dd6beb16742d1e9772929940fc90082c39d9c0
+          curl -fsSL -o /tmp/trivy.tar.gz \
+            "https://github.com/aquasecurity/trivy/releases/download/v${TRIVY_VERSION}/trivy_${TRIVY_VERSION}_Linux-64bit.tar.gz"
+          echo "${TRIVY_SHA256}  /tmp/trivy.tar.gz" | sha256sum -c -
+          tar -xzf /tmp/trivy.tar.gz -C /tmp trivy
+          sudo install -m 0755 /tmp/trivy /usr/local/bin/trivy
+          trivy --version
+
+      # The anonymity denylist is gitignored by design. Where the secret exists
+      # it is restored, so secret-scan runs at full strength on the artefact
+      # that is about to become public. Where it does not, the release stops:
+      # publishing is the one moment a leak cannot be undone.
+      - name: restore the anonymity denylist
+        env:
+          ANONYMIZE_LIST: ${{ secrets.ANONYMIZE_LIST }}
+        run: |
+          set -euo pipefail
+          if ! grep -q 'anonymize-list' test/secret-scan.sh; then
+            echo "scanner carries its patterns inline; no denylist needed"
+            exit 0
+          fi
+          if [ -z "${ANONYMIZE_LIST:-}" ]; then
+            echo "ANONYMIZE_LIST is not set: a release must not proceed without the"
+            echo "identity scan at full strength. Set the secret and re-run."
+            exit 1
+          fi
+          printf '%s\n' "$ANONYMIZE_LIST" > .anonymize-list
+
+      - name: log in to GHCR
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+
+      # The runbook, executable: build, gates, push, digest, pin, re-gate,
+      # commit, tag. Anything that would have been a skipped step is now a
+      # failed run.
+      - name: release
+        run: scripts/release.sh "$VERSION"
+
+      - name: push the release commit and the tag
+        run: |
+          set -euo pipefail
+          git push origin "HEAD:${{ github.ref_name }}"
+          git push origin "v$VERSION"
+
+      - name: remove the denylist from the runner
+        if: always()
+        run: rm -f .anonymize-list || true
