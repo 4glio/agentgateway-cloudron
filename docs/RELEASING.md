@@ -17,12 +17,17 @@ All published artifacts are this repository's own:
 - Image: `ghcr.io/4glio/agentgateway-cloudron`
 - Feed: `https://raw.githubusercontent.com/4glio/agentgateway-cloudron/main/CloudronVersions.json`
 
-The package began as a packaging of agentgateway by the upstream packager, OrcVole, whose image this
-repository consumed until 1.0.5. From 1.0.6 it publishes its own image: a package that points at a
-registry namespace it cannot push to is a package that cannot ship a security fix without someone
-else's consent, and that request went unanswered. `author` and `contactEmail` still credit and
-contact the original packager, because the packaging design is theirs; the packager fields name 4GL,
-because the artifact is now built here.
+The package began as a packaging of agentgateway by OrcVole, whose image this repository consumed until
+1.0.5. From 1.0.6 it publishes its own image: a package that points at a registry namespace it cannot
+push to is a package that cannot ship a security fix without someone else's consent, and that request
+went unanswered. From 1.0.7 the documented maintainer is 4GL: `author`, `contactEmail`,
+`packagerName` and `packagerUrl` all name 4GL, and `ciso@4gl.io` is the address a Cloudron operator
+writes to. Entries 1.0.0 through 1.0.6 keep OrcVole in their embedded manifest copies, because a
+published feed entry is the record of what a box installed and is not rewritten; `.scan-allowlist`
+carries that address for that reason alone, with the removal condition beside it.
+
+The packaging design and the topology decisions are still OrcVole's, and README and the ADRs credit
+that where it matters. Naming the maintainer 4GL is about who answers, not about erasing who built it.
 
 The single rule that remains from the earlier identity policy: **no personal host, email, username,
 key or token may appear in any tracked file.** `.anonymize-list` (gitignored) holds the estate's

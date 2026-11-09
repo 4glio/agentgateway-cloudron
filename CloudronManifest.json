@@ -1,7 +1,7 @@
 {
   "id": "dev.agentgateway.cloudronapp",
   "title": "Agentgateway",
-  "author": "OrcVole",
+  "author": "4GL",
   "tagline": "Open source proxy for MCP and LLM traffic",
   "icon": "file://logo.png",
   "description": "file://DESCRIPTION.md",
@@ -31,10 +31,10 @@
   "documentationUrl": "https://github.com/4glio/agentgateway-cloudron",
   "postInstallMessage": "file://POSTINSTALL.md",
   "manifestVersion": 2,
-  "contactEmail": "OrcVole@users.noreply.github.com",
+  "contactEmail": "ciso@4gl.io",
   "iconUrl": "https://raw.githubusercontent.com/4glio/agentgateway-cloudron/main/logo.png",
   "packagerName": "4GL",
-  "packagerUrl": "https://4glio.io",
+  "packagerUrl": "https://4gl.io",
   "minBoxVersion": "9.1.0",
   "mediaLinks": [
     "https://raw.githubusercontent.com/4glio/agentgateway-cloudron/main/screenshots/admin-overview.png"
