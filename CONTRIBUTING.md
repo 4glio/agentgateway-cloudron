@@ -11,8 +11,9 @@ rules that this file assumes.
 
 ## Development workflow
 
-1. **Prerequisites:** Docker on your machine, a Docker registry you can push to, the
-   Cloudron CLI (`npm install -g cloudron`), and access to the target Cloudron.
+1. **Prerequisites:** Docker (or rootless `podman`) and `skopeo` on your machine, and the Cloudron
+   CLI (`npm install -g cloudron`) plus access to the target Cloudron for an end-to-end install
+   check. You do not need registry credentials: releases are cut in CI.
 2. **Install the Cloudron packaging skills** if you use an AI editor, so the assistant has
    the current conformance rules:
 
@@ -38,6 +39,7 @@ rules that this file assumes.
    ```bash
    test/secret-scan.sh "$IMAGE"   # does this artefact leak something of ours
    test/trivy-scan.sh "$IMAGE"    # does this artefact ship something known to be broken
+   python3 test/version_consistency.py  # do the manifest, feed, Dockerfile and changelog agree
    ```
 
    `trivy-scan.sh` also scans the build manifests. It fails on HIGH and CRITICAL findings, prints
@@ -75,14 +77,16 @@ rules that this file assumes.
 
 ## Publishing as a community app
 
-The community-app channel makes the package installable by others before any official
-review:
+Releases are cut by `scripts/release.sh`, run from `.github/workflows/release.yml`; see
+`docs/RELEASING.md` for the flow, the gates, and the one-time repository setup. Do not hand-edit
+`CloudronVersions.json` or the `dockerImage` field: both are written from the digest the registry
+returned, and a hand-edit is how the feed and the manifest drift apart.
 
 1. Keep `CloudronManifest.json` metadata complete: id, title, author, description, tagline,
    website, contactEmail, icon, tags.
-2. Maintain `CloudronVersions.json` as the version channel.
-3. Publish per the `cloudron-app-publishing` skill and the docs at
-   <https://docs.cloudron.io/packaging/> .
+2. Treat `CloudronVersions.json` as generated state. The newest entry and the manifest must name the
+   same version and the same digest; `test/version_consistency.py` enforces it.
+3. Publish per the docs at <https://docs.cloudron.io/packaging/>.
 4. Announce in the Cloudron forum so others can test, and link the public repository.
 
 ---

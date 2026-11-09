@@ -1,179 +1,111 @@
 # Releasing
 
-This is the repeatable release runbook for the agentgateway Cloudron package. Following it for a
-version bump should require no rediscovery of the steps that were worked out for the first release.
+A release is one command. `scripts/release.sh` is the runbook, executable, and
+`.github/workflows/release.yml` runs it on a runner with the workflow token. There is no personal
+registry token, no local digest to read by hand, and no window in which the changelog, the manifest
+and the feed can disagree.
 
 The package version and the upstream agentgateway version move independently. The package version is
 plain semver in `CloudronManifest.json`. The upstream version is the `AGENTGATEWAY_VERSION` build
 argument in the `Dockerfile`, which is the single source of truth for what upstream binary ships.
 
-## Identity (every release)
+## Identity
 
-All published artifacts use the neutral OrcVole identity and nothing else:
+All published artifacts are this repository's own:
 
-- Repository: `github.com/OrcVole/agentgateway-cloudron`
-- Image: `ghcr.io/orcvole/agentgateway-cloudron`
-- Commit author and committer: `OrcVole <OrcVole@users.noreply.github.com>`, unsigned
+- Repository: `github.com/4glio/agentgateway-cloudron`
+- Image: `ghcr.io/4glio/agentgateway-cloudron`
+- Feed: `https://raw.githubusercontent.com/4glio/agentgateway-cloudron/main/CloudronVersions.json`
 
-Run the anonymity sweep before every push. No personal host, email, username, or registry may
-appear in any tracked file. The private personal mirror is a convenience only; its URL must never
-appear in a tracked file.
+The package began as a packaging of agentgateway by the upstream packager, OrcVole, whose image this
+repository consumed until 1.0.5. From 1.0.6 it publishes its own image: a package that points at a
+registry namespace it cannot push to is a package that cannot ship a security fix without someone
+else's consent, and that request went unanswered. `author` and `contactEmail` still credit and
+contact the original packager, because the packaging design is theirs; the packager fields name 4GL,
+because the artifact is now built here.
 
-## Prerequisites
+The single rule that remains from the earlier identity policy: **no personal host, email, username,
+key or token may appear in any tracked file.** `.anonymize-list` (gitignored) holds the estate's
+denylist and `test/secret-scan.sh` enforces it. A fork that publishes under an organisation still
+leaks the person behind the workstation if that rule is dropped.
 
-- A container builder. On a host without the Docker daemon, rootless `podman` is enough. `cloudron
-  build` also works over the podman socket by exporting
-  `DOCKER_HOST=unix:///run/user/$(id -u)/podman/podman.sock`.
-- `skopeo`, for reading the registry digest. ImageMagick (`magick`), only if the icon changes.
-- The `cloudron` CLI logged in to a box, for the optional end-to-end install check.
-- A classic GitHub Personal Access Token for OrcVole with scopes `repo`, `write:packages`, and
-  `read:packages`. Keep it in `orcvole-token.txt`, which is gitignored and dockerignored. Delete it
-  after the release (see step 12).
+## Cutting a release
 
-## Release sequence
+1. **Write the notes.** Add the release's bullets to `CHANGELOG.md` under `[Unreleased]`. The
+   bracket form is required: the Cloudron changelog parser wants a literal `[x.y.z]` line, and
+   `scripts/pin_release.py` renames `[Unreleased]` to `[x.y.z]` at release time. Nothing else in the
+   repository names the new version yet, which is deliberate: a version that exists in the changelog
+   but not in the feed is the half-release this flow exists to prevent.
+2. **Bump the upstream version, if it moved.** Change `AGENTGATEWAY_VERSION` in the `Dockerfile` and
+   `upstreamVersion` in `CloudronManifest.json`. Nothing else.
+3. **Run Release.** Actions, Release, Run workflow, version `x.y.z`. It builds, runs every gate,
+   pushes, reads the digest from the registry, writes `CloudronManifest.json` and
+   `CloudronVersions.json`, commits `release: x.y.z`, and tags `vx.y.z`.
 
-### 1. Bump the upstream version
-
-Change `AGENTGATEWAY_VERSION` in the `Dockerfile`, and nowhere else, to the new upstream tag. Update
-`upstreamVersion` in `CloudronManifest.json`. If the package itself changed, bump the package
-`version` too. Add a new `[x.y.z]` entry to `CHANGELOG.md` (the bracket form is required, see step 5).
-
-### 2. Linkage gate (Gate 1, mandatory)
-
-The upstream binary is dynamically linked and depends on an exact glibc version. A future upstream
-build on a newer toolchain can fail silently on the pinned `cloudron/base` image: the build
-succeeds, and the binary only fails at runtime. Prove the new binary runs on the pinned base before
-pinning or pushing anything. The built image is the binary on the base, so test it directly:
+Locally, the same command is:
 
 ```bash
-podman build --pull -t ghcr.io/orcvole/agentgateway-cloudron:<ver> -f Dockerfile .
-podman run --rm ghcr.io/orcvole/agentgateway-cloudron:<ver> ldd /app/code/agentgateway
-podman run --rm ghcr.io/orcvole/agentgateway-cloudron:<ver> /app/code/agentgateway --version
+scripts/release.sh 1.0.6
 ```
 
-The `ldd` output must show no `not found` lines and no `GLIBC_x.y not found` errors, and the version
-flag must print the expected version. If either fails, the upstream toolchain has outrun the base.
-Stop, raise the `cloudron/base` pin to a newer digest that provides the required glibc, re-run this
-gate, and only then continue.
+Set `COMMIT=1` to have it commit and tag, `PUSH=0` to build and gate without publishing, and
+`SKIP_ANON=1` only against a local registry. A local run needs `podman` (or `docker`), `skopeo`, and
+`trivy` on `PATH`.
 
-### 3. Push the image
+## What the script gates, in order
 
-```bash
-printf '%s' "$TOKEN" | podman login ghcr.io -u OrcVole --password-stdin
-podman push ghcr.io/orcvole/agentgateway-cloudron:<ver>
-```
+1. **Preconditions.** The version is `x.y.z`, is not already in the feed, and has changelog notes.
+2. **Linkage (Gate 1).** `ldd /app/code/agentgateway` inside the built image shows no missing library
+   and no `GLIBC_x.y not found`, and `--version` prints the pinned version. The upstream binary is
+   dynamically linked against an exact glibc: a newer upstream toolchain than the pinned
+   `cloudron/base` produces an image that builds, pushes, and then dies on first boot.
+3. **secret-scan.** No identity string, host, or token in the repo or in the image.
+4. **smoke.** The image runs the way Cloudron runs it and the two-surface topology still holds.
+5. **trivy.** No HIGH or CRITICAL vulnerability with a fix, and no HIGH or CRITICAL build
+   misconfiguration. Exceptions live in `.trivyignore`, one line each, with the reason and the
+   condition that removes it.
+6. **Push, then read the digest from the registry.** A local build's manifest digest is not the
+   registry digest; pinning the local one points the feed at an image nobody can pull.
+7. **Anonymous pull.** `skopeo inspect` with an empty authfile against `repo@digest`. GHCR packages
+   are private when first created: profile, Packages, the package, Package settings, Danger Zone,
+   Change visibility, Public. There is no REST API for that flip, so the first release of a new
+   package name will fail this gate once, deliberately, before it can publish a feed entry strangers
+   cannot use.
+8. **Pin and re-gate.** `scripts/pin_release.py` writes both files and renames the changelog heading;
+   `test/version_consistency.py` then proves manifest, feed, Dockerfile, changelog and namespace
+   agree. A failure here stops the commit.
 
-`cloudron build build --repository ghcr.io/orcvole/agentgateway-cloudron --tag <ver>` over the
-podman socket is an equivalent path and produced the same registry digest.
+## Gates that are not automated
 
-### 4. Capture the registry digest
+- **Config migration (Gate 3).** A same-schema update does not exercise the migration
+  transformation. When an upstream release changes the configuration schema, run the migrate
+  transformation against an old configuration before releasing, and confirm the app comes up on the
+  migrated config. See `UPGRADING.md`.
+- **Update survival.** Install the previous version on a box, then update it to the new one, and
+  confirm the admin UI and the data plane both survive with their configuration intact.
 
-Read the digest from the registry, not from the local image. A local podman build reports a
-different local manifest digest than the registry stores, so always read the tag from the registry:
+Both need a live Cloudron, so they belong on a proving ground rather than in CI.
 
-```text
-skopeo inspect --format '{{.Digest}}' docker://ghcr.io/orcvole/agentgateway-cloudron:<ver>
-```
+## One-time repository setup
 
-### 5. Generate the versions entry
+- **Actions enabled.** A fork starts with workflows disabled: Settings, Actions, General, Enable.
+- **Workflow permissions.** Settings, Actions, General, Workflow permissions: read and write. The
+  release job needs it to push the release commit, and `packages: write` is requested by the
+  workflow itself.
+- **Branch protection on `main`.** The release job commits the pinned manifest and feed entry back
+  to the branch it was dispatched from. With a pull-request-only rule and no bypass, that push is
+  rejected at the last step, after the image is already public. Either allow the GitHub Actions
+  app to bypass the rule for this repository, or run the Release workflow from a branch that is not
+  protected and merge the resulting commit forward.
+- **`ANONYMIZE_LIST` secret.** Settings, Secrets and variables, Actions: paste the contents of the
+  estate's `.anonymize-list`. Without it the anonymity job fails closed and the release job refuses
+  to publish, which is the intended behaviour: an identity scan that cannot run would otherwise
+  report the same green as one that ran clean.
+- **Package visibility.** First release of `ghcr.io/4glio/agentgateway-cloudron` creates it private;
+  flip it public with the steps in gate 7.
 
-`cloudron versions add --state published` writes the new version into `CloudronVersions.json` (a
-`version -> manifest-with-dockerImage` map). It needs prior `cloudron build` state and enforces the
-strict appstore manifest schema. The fields it demands, which are easy to rediscover the slow way,
-are:
+## Rollback
 
-- `contactEmail`: must match the email format (`OrcVole@users.noreply.github.com`).
-- `iconUrl`: a non-empty URL (the raw `logo.png`).
-- `mediaLinks`: at least one entry (the raw screenshot under `screenshots/`).
-- `changelog`: the parser wants a literal `[x.y.z]` line, not a markdown `## x.y.z` header. It
-  collects the lines under that bracket line until the next `[`.
-
-`cloudron versions add` records `dockerImage` as the tag. Replace it with the digest in step 6.
-
-### 6. Pin the digest
-
-Set the digest reference, never the tag, in both files:
-
-- `CloudronManifest.json` field `dockerImage`
-- `CloudronVersions.json` field `versions["<ver>"].manifest.dockerImage`
-
-The form is `ghcr.io/orcvole/agentgateway-cloudron@sha256:<digest>`.
-
-### 7. GHCR visibility
-
-GHCR packages are private by default. The first publish needed a one-time manual flip to public:
-profile, then Packages, then the package, then Package settings, then Danger Zone, then Change
-visibility, then Public. There is no REST API for this. A normal version bump to the existing
-package stays public and needs no action here. Only a change of package name or namespace would
-create a new, private package that needs the manual flip again. Note it so that does not surprise a
-future maintainer.
-
-### 8. Anonymous-pull-by-digest gate
-
-Before pushing the repository, prove a stranger can pull the exact image. Remove the local copy, log
-out, and pull by digest with no credentials:
-
-```bash
-podman rmi -f ghcr.io/orcvole/agentgateway-cloudron@sha256:<digest>
-podman logout ghcr.io
-printf '{"auths":{}}' > /tmp/empty.json
-podman pull --authfile /tmp/empty.json ghcr.io/orcvole/agentgateway-cloudron@sha256:<digest>
-```
-
-It must succeed. An `unauthorized` result means the package is still private: fix step 7, and do not
-push the repository. This gate exists so the published repository never points at an image strangers
-cannot pull.
-
-### 9. Commit and sweep
-
-Stage the changes and commit as OrcVole, unsigned. The repository git config is already set to the
-OrcVole identity with `commit.gpgsign=false`, so a plain commit is correct:
-
-```bash
-git add -A
-git commit -m "..."
-```
-
-Re-run the anonymity sweep over all tracked files plus `CloudronVersions.json`. Confirm no personal
-host, email, username, registry, key, or token, and that the only new identifiers are the digest,
-`ghcr.io/orcvole`, and the OrcVole URLs.
-
-### 10. Push the repository, token-free
-
-Authenticate as OrcVole without writing a credential into git config or the process arguments, using
-`GIT_ASKPASS`:
-
-```bash
-printf '%s' "$TOKEN" > /tmp/.ghtok; chmod 600 /tmp/.ghtok
-cat > /tmp/askpass.sh <<'EOF'
-#!/bin/sh
-case "$1" in Username*) echo OrcVole;; Password*) cat /tmp/.ghtok;; esac
-EOF
-chmod 700 /tmp/askpass.sh
-GIT_ASKPASS=/tmp/askpass.sh GIT_TERMINAL_PROMPT=0 git push github main
-rm -f /tmp/askpass.sh /tmp/.ghtok
-```
-
-Leave the named remote URL token-free.
-
-### 11. Config-migration gate (Gate 3)
-
-A same-schema update does not exercise the migration transformation, so it stays unproven until an
-upstream release actually changes the configuration schema. When upstream changes the schema, run
-the migrate transformation against an old configuration before shipping, and confirm the app comes
-up on the migrated config. See UPGRADING.md for the full description of this gate alongside the
-binary-to-base linkage gate and the update-survival gate.
-
-### 12. Token cleanup
-
-Delete `orcvole-token.txt` after the release. It is a live credential in plaintext on disk. Revoke
-the PAT on GitHub as well if no near-term updates are planned.
-
-## The gates, in one place
-
-1. Linkage (Gate 1): the new binary runs on the pinned base, proven by `ldd` and the version flag.
-   Mandatory on every bump, because the failure is silent at build time.
-2. Anonymous pull: the published digest is pullable with no credentials, checked before the repo
-   push.
-3. Config migration (Gate 3): exercise the migrate transformation on an old config whenever upstream
-   changes the configuration schema. Cross-referenced in UPGRADING.md.
+The feed is the state. To withdraw a version, set its `publishState` to `unpublished` (or delete the
+entry) in `CloudronVersions.json` and push: a box reads the feed and will not offer it. Do not
+delete the image: boxes already running that digest need it on update and rollback.

@@ -14,3 +14,7 @@ agentgateway.webp
 *token*.txt
 .env.*
 phase-notes/
+
+# Python bytecode from local test runs of scripts/*.py
+__pycache__/
+*.pyc

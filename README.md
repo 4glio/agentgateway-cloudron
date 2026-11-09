@@ -172,12 +172,12 @@ that run on every version bump.
 ## Install
 
 This package is published as a public image on GitHub Container Registry,
-`ghcr.io/orcvole/agentgateway-cloudron`, and as a Cloudron community versions file. To install it,
+`ghcr.io/4glio/agentgateway-cloudron`, and as a Cloudron community versions file. To install it,
 point the Cloudron CLI at the versions URL and choose your two domains:
 
 ```bash
 cloudron install \
-  --versions-url https://raw.githubusercontent.com/OrcVole/agentgateway-cloudron/main/CloudronVersions.json \
+  --versions-url https://raw.githubusercontent.com/4glio/agentgateway-cloudron/main/CloudronVersions.json \
   --location agentgateway.example.com \
   --secondary-domains DATA_PLANE_DOMAIN=gw-api.example.com
 ```

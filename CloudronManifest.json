@@ -27,17 +27,17 @@
   "tags": [
     "chat"
   ],
-  "website": "https://github.com/OrcVole/agentgateway-cloudron",
-  "documentationUrl": "https://github.com/OrcVole/agentgateway-cloudron",
+  "website": "https://github.com/4glio/agentgateway-cloudron",
+  "documentationUrl": "https://github.com/4glio/agentgateway-cloudron",
   "postInstallMessage": "file://POSTINSTALL.md",
   "manifestVersion": 2,
   "contactEmail": "OrcVole@users.noreply.github.com",
-  "iconUrl": "https://raw.githubusercontent.com/OrcVole/agentgateway-cloudron/main/logo.png",
-  "packagerName": "OrcVole",
-  "packagerUrl": "https://github.com/OrcVole/agentgateway-cloudron",
+  "iconUrl": "https://raw.githubusercontent.com/4glio/agentgateway-cloudron/main/logo.png",
+  "packagerName": "4GL",
+  "packagerUrl": "https://4glio.io",
   "minBoxVersion": "9.1.0",
   "mediaLinks": [
-    "https://raw.githubusercontent.com/OrcVole/agentgateway-cloudron/main/screenshots/admin-overview.png"
+    "https://raw.githubusercontent.com/4glio/agentgateway-cloudron/main/screenshots/admin-overview.png"
   ],
   "dockerImage": "ghcr.io/orcvole/agentgateway-cloudron@sha256:eb0adadcaba17aab003133fe60cdd10b2421efa61a0c499fa485f5c7a2ac9590"
 }

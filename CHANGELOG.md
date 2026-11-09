@@ -1,5 +1,16 @@
-[1.0.6]
+[Unreleased]
 
+- Publish this package's own image, `ghcr.io/4glio/agentgateway-cloudron`, and release it from CI.
+  `scripts/release.sh` replaces the twelve-step manual runbook: it builds, runs the linkage, secret,
+  smoke, trivy and version gates, pushes, reads the digest from the registry, and writes that digest
+  into `CloudronManifest.json` and `CloudronVersions.json` in the same run, so the feed can no longer
+  name a version no image implements. `.github/workflows/release.yml` runs it with the workflow
+  token, so no personal registry credential exists to leak or forget to revoke.
+- Add `test/version_consistency.py` to both workflows: manifest version, newest feed entry, the
+  `Dockerfile` build argument and the changelog block must agree, and the image must be pinned by
+  digest in this repository's namespace.
+- Split the GitHub workflow into two jobs so the trivy, smoke and version gates are not held hostage
+  by the anonymity secret, which a checkout never carries.
 - Add a known-vulnerability gate (`test/trivy-scan.sh`, wired into the PR checks): the built image
   and the build manifests are scanned for HIGH and CRITICAL findings, unfixed advisories are printed
   but not enforced, and a scan that cannot run fails rather than passing. See

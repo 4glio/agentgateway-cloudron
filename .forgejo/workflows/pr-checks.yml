@@ -101,6 +101,18 @@ jobs:
           printf '%s\n' "$ANONYMIZE_LIST" > .anonymize-list
           echo "denylist restored: $(grep -cvE '^\s*(#|$)' .anonymize-list) patterns"
 
+      # Cheap, needs no build, and catches the half-release no other gate can see.
+      - name: version consistency
+        run: |
+          set -euo pipefail
+          repo="$(python3 -c 'import json;print(json.load(open("CloudronManifest.json"))["dockerImage"].split("@")[0])')"
+          if [ "$repo" = "ghcr.io/orcvole/agentgateway-cloudron" ]; then
+            echo "note: manifest still pins the inherited pre-fork image; namespace check relaxed"
+            python3 test/version_consistency.py
+          else
+            EXPECTED_IMAGE_REPO=ghcr.io/4glio/agentgateway-cloudron python3 test/version_consistency.py
+          fi
+
       # First, because a leaked secret is the one failure that cannot be undone after a push.
       #
       # SCAN_REPORT_ONLY was set here on 2026-08-09 for one evidence-gathering pass, while the

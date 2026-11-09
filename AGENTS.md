@@ -227,8 +227,13 @@ These are the only supported workflows. Keep them working; if you change them, u
 section.
 
 ```bash
-# Build and push to your registry (run from the repo root, on a machine with Docker)
-cloudron build
+# Release: build, run every gate, publish the image, write the manifest and the feed.
+# CI runs the same script (.github/workflows/release.yml); see docs/RELEASING.md.
+scripts/release.sh 1.0.6
+
+# Local iteration only: build without publishing or gating
+podman build -t agentgateway-dev .        # or: docker build -t agentgateway-dev .
+PUSH=0 SKIP_GATES=1 scripts/release.sh 1.0.6   # dry run, writes nothing
 
 # Install on the target Cloudron (use --debug for a writable rootfs while iterating)
 cloudron install --location agentgateway.example.com
