@@ -4,4 +4,11 @@
 # The declared Cloudron contactEmail. Every manifest must carry one and it is public by definition,
 # so the denylist matching it is correct behaviour and allowlisting it is the honest response.
 # Before 2026-08-09 meilisearch alone handled this, with bespoke code; now it is the shared mechanism.
+ciso@4gl.io
+
+# The previous packager's address, kept only because published feed entries cannot be rewritten.
+# Versions 1.0.0 through 1.0.6 embed it in their manifest copies, and those entries must stay
+# byte-identical to what shipped: they are the record of what a box installed. The live manifest
+# names 4GL. This line goes away only when every such entry is revoked, which would also remove
+# those versions from the update path.
 OrcVole@users.noreply.github.com

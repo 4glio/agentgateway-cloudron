@@ -18,10 +18,11 @@ This repository publishes `ghcr.io/4glio/agentgateway-cloudron` and generates it
 using the workflow's `GITHUB_TOKEN`, and `scripts/release.sh` writes the manifest and the feed from
 the digest the registry returned in that same run.
 
-`author` and `contactEmail` still credit the original packager, because the packaging design and
-the topology decisions are theirs. `packagerName` and `packagerUrl` name 4GL, because the artefact
-is built here. The manifest `id` is unchanged: an install from this feed is the same Cloudron app,
-so a box can move between the two feeds without becoming a second application.
+From 1.0.7 the documented maintainer is 4GL: `author`, `contactEmail`, `packagerName` and
+`packagerUrl` all name 4GL. Entries 1.0.0 through 1.0.6 keep OrcVole in their embedded manifest
+copies, because a published feed entry records what a box installed and is not rewritten. The
+manifest `id` is unchanged: an install from this feed is the same Cloudron app, so a box can move
+between the two feeds without becoming a second application.
 
 The old identity rule, that all published artifacts use one neutral name and no personal identity
 appears anywhere, becomes narrower and sharper: no personal host, email, username, key or token in
@@ -35,8 +36,8 @@ licence to leak the person behind the workstation.
 - The first release of the package creates a private GHCR package. Until its visibility is flipped
   to public, the release fails its anonymous-pull gate, deliberately: a feed entry pointing at an
   image strangers cannot pull is worse than no release.
-- `author` and `contactEmail` now identify a person who is not the publisher. That is a
-  documentation debt, not a runtime one; it is called out in `docs/RELEASING.md` so the next
-  maintainer does not read it as an error.
+- `author` and `contactEmail` named a person who was not the publisher between 1.0.6 and 1.0.6
+  inclusive; 1.0.7 moves both to 4GL, and the historical feed entries keep the old values because
+  they are not rewritten.
 - Upstream improvements remain welcome. If the original repository merges this work, the only
   fork-specific part is the image namespace.

@@ -1,3 +1,13 @@
+[Unreleased]
+
+- Move the documented maintainer to 4GL. `author` and `contactEmail` in the manifest, and therefore in
+  every new feed entry, now name 4GL and ciso@4gl.io; `packagerUrl` points at 4gl.io rather than the
+  product site. Nothing changes at runtime: same app id, same image, same data. The change matters at
+  the one moment a Cloudron operator needs to know who to contact about the package. Entries 1.0.0 to
+  1.0.6 keep OrcVole in their embedded manifest copies, because a published entry records what a box
+  installed and is not rewritten; `.scan-allowlist` keeps that address for that reason and only that
+  reason.
+
 [1.0.6]
 
 - Publish this package's own image, `ghcr.io/4glio/agentgateway-cloudron`, and release it from CI.
