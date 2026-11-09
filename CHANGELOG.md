@@ -17,8 +17,11 @@
   `docs/decisions/0005-vulnerability-gate.md`. The first run found `DS-0002` (no `USER` in the
   Dockerfile), which is allowlisted with its reason: Cloudron's root entrypoint is what lets
   `start.sh` chown `/app/data` and drop to `cloudron` via `gosu`.
-- Bump uv 0.11.8 to 0.13.7 and yq v4.53.3 to v4.54.1. Both are verified against the digests the
-  upstream projects publish, not just against the download.
+- Bump uv 0.11.8 to 0.13.7 and yq v4.53.3 to v4.54.3. Both are verified against the digests the
+  upstream projects publish, not just against the download. The base image ships its own yq at
+  `/usr/bin/yq` (v4.53.6, unmanaged by dpkg); it is removed so the image carries exactly one yq, the
+  pinned one, because the stale copy was shadowed on `PATH` but still published and still reported a
+  fixable advisory.
 - Bump Node 24.22.1 to 24.22.2 (patch), with the image digest re-pinned and the runtime path moved
   to `/usr/local/node-24.22.2`.
 - CI publishes a CycloneDX software bill of materials for every build, from the same image the

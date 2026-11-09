@@ -56,7 +56,7 @@ jobs:
       GIT_COMMITTER_NAME: agentgateway-cloudron release
       GIT_COMMITTER_EMAIL: release@4glio.io
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
         with:
           # The release commits back to the branch it was dispatched from, so it
           # needs the full ref, not a detached sha.
